@@ -12,32 +12,39 @@ ssl._create_default_https_context = ssl._create_unverified_context
 class ImprovedCNN(nn.Module):
     def __init__(self):
         super(ImprovedCNN, self).__init__()
-        # Let's calculate parameters for each layer:
         self.features = nn.Sequential(
-            # Conv1: (3x3x1x16) + 16 bias = 160 params
-            nn.Conv2d(1, 16, kernel_size=3, padding=1),
-            # BatchNorm1: 2x16 (mean and var) = 32 params
+            # First conv block: 28x28x1 -> 28x28x4
+            nn.Conv2d(1, 4, kernel_size=3, padding=1),
+            nn.BatchNorm2d(4),
+            nn.ReLU(),
+
+            # Second conv block: 28x28x4 -> 28x28x8
+            nn.Conv2d(4, 8, kernel_size=3, padding=1),
+            nn.BatchNorm2d(8),
+            nn.ReLU(),
+            nn.MaxPool2d(2),  # -> 14x14x8
+
+            # Third conv block: 14x14x8 -> 14x14x12
+            nn.Conv2d(8, 12, kernel_size=3, padding=1),
+            nn.BatchNorm2d(12),
+            nn.ReLU(),
+
+            # Fourth conv block: 14x14x12 -> 14x14x16
+            nn.Conv2d(12, 16, kernel_size=3, padding=1),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.MaxPool2d(2),  # -> 7x7x16
 
-            # Conv2: (3x3x16x32) + 32 bias = 4,640 params
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
-            # BatchNorm2: 2x32 = 64 params
-            nn.BatchNorm2d(32),
+            # Fifth conv block: 7x7x16 -> 7x7x20
+            nn.Conv2d(16, 20, kernel_size=3, padding=1),
+            nn.BatchNorm2d(20),
             nn.ReLU(),
-            nn.MaxPool2d(2)
         )
 
         self.classifier = nn.Sequential(
-            nn.Dropout(0.2),
-            # FC1: (7x7x32)x128 + 128 bias = 25,088 params - Too many!
-            # Let's reduce to 64 nodes
-            nn.Linear(7 * 7 * 32, 64),
+            nn.Linear(7 * 7 * 20, 32),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            # FC2: 64x10 + 10 bias = 650 params
-            nn.Linear(64, 10)
+            nn.Linear(32, 10)
         )
 
     def forward(self, x):
@@ -70,7 +77,7 @@ def train_model():
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=64,
+        batch_size=128,
         shuffle=True,
         num_workers=2,
         pin_memory=True if torch.cuda.is_available() else False
@@ -86,13 +93,15 @@ def train_model():
         print(f"{name}: {param.numel()}")
     print(f"\nTotal trainable parameters: {total_params}")
 
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-    optimizer = optim.Adam(model.parameters(), lr=0.003)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=0.005, weight_decay=0)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        max_lr=0.003,
+        max_lr=0.05,
         steps_per_epoch=len(train_loader),
-        epochs=1
+        pct_start=0.2,
+        epochs=1,
+        anneal_strategy='cos'
     )
 
     # Training
@@ -108,6 +117,9 @@ def train_model():
         output = model(data)
         loss = criterion(output, target)
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
         optimizer.step()
         scheduler.step()
 
