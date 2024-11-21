@@ -1,2 +1,2 @@
-Parameters: 26698
-Accuracy: 89.215
+Parameters: 105962
+Accuracy: 92.53

@@ -1,29 +1,43 @@
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class CompactCNN(nn.Module):
+class ImprovedCNN(nn.Module):
     def __init__(self):
-        super(CompactCNN, self).__init__()
+        super(ImprovedCNN, self).__init__()
+        # Let's calculate parameters for each layer:
         self.features = nn.Sequential(
-            nn.Conv2d(1, 8, kernel_size=3, padding=1),  # 28x28x8
+            # Conv1: (3x3x1x16) + 16 bias = 160 params
+            nn.Conv2d(1, 16, kernel_size=3, padding=1),
+            # BatchNorm1: 2x16 (mean and var) = 32 params
+            nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d(2),  # 14x14x8
-            nn.Conv2d(8, 16, kernel_size=3, padding=1),  # 14x14x16
+            nn.MaxPool2d(2),
+
+            # Conv2: (3x3x16x32) + 32 bias = 4,640 params
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            # BatchNorm2: 2x32 = 64 params
+            nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.MaxPool2d(2),  # 7x7x16
+            nn.MaxPool2d(2)
         )
+
         self.classifier = nn.Sequential(
-            nn.Linear(7 * 7 * 16, 32),
+            nn.Dropout(0.2),
+            # FC1: (7x7x32)x128 + 128 bias = 25,088 params - Too many!
+            # Let's reduce to 64 nodes
+            nn.Linear(7 * 7 * 32, 64),
             nn.ReLU(),
-            nn.Linear(32, 10)
+            nn.Dropout(0.2),
+            # FC2: 64x10 + 10 bias = 650 params
+            nn.Linear(64, 10)
         )
 
     def forward(self, x):
@@ -56,23 +70,36 @@ def train_model():
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=128,
-        shuffle=True
+        batch_size=64,
+        shuffle=True,
+        num_workers=2,
+        pin_memory=True if torch.cuda.is_available() else False
     )
 
     # Initialize model
-    model = CompactCNN().to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    model = ImprovedCNN().to(device)
 
-    # Print model parameters
+    # Calculate and print parameter count
     total_params = count_parameters(model)
-    print(f"Total trainable parameters: {total_params}")
+    print("\nParameter count breakdown:")
+    for name, param in model.named_parameters():
+        print(f"{name}: {param.numel()}")
+    print(f"\nTotal trainable parameters: {total_params}")
+
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    optimizer = optim.Adam(model.parameters(), lr=0.003)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=0.003,
+        steps_per_epoch=len(train_loader),
+        epochs=1
+    )
 
     # Training
     model.train()
     correct = 0
     total = 0
+    running_loss = 0.0
 
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
@@ -82,14 +109,18 @@ def train_model():
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
         _, predicted = output.max(1)
         total += target.size(0)
         correct += predicted.eq(target).sum().item()
+        running_loss += loss.item()
 
         if batch_idx % 100 == 0:
-            print(f'Batch: {batch_idx}, Loss: {loss.item():.4f}, '
-                  f'Accuracy: {100. * correct / total:.2f}%')
+            print(f'Batch: {batch_idx}/{len(train_loader)}, '
+                  f'Loss: {running_loss / (batch_idx + 1):.4f}, '
+                  f'Accuracy: {100. * correct / total:.2f}%, '
+                  f'LR: {scheduler.get_last_lr()[0]:.6f}')
 
     final_accuracy = 100. * correct / total
     print(f'Final Training Accuracy: {final_accuracy:.2f}%')
