@@ -13,33 +13,29 @@ class ImprovedCNN(nn.Module):
     def __init__(self):
         super(ImprovedCNN, self).__init__()
         self.features = nn.Sequential(
-            # First conv block: 28x28x1 -> 28x28x6
-            nn.Conv2d(1, 4, kernel_size=3, padding=1),  # (3*3*1*6) + 6 = 60
-            nn.BatchNorm2d(4),  # 12
+            nn.Conv2d(1, 4, kernel_size=3, padding=1),  # 9*4=36+4
+            nn.BatchNorm2d(4),  # 8
             nn.ReLU(),  # 0
             nn.MaxPool2d(2),  # 0
 
-            # Second conv block: 14x14x6 -> 14x14x12
-            nn.Conv2d(4, 8, kernel_size=3, padding=1),  # (3*3*6*12) + 12 = 660
-            nn.BatchNorm2d(8),  # 24
+            nn.Conv2d(4, 8, kernel_size=3, padding=1),  # 32*9=288+8
+            nn.BatchNorm2d(8),  # 16
             nn.ReLU(),  # 0
             nn.MaxPool2d(2),  # 0
 
-            # Third conv block: 7x7x12 -> 7x7x16
-            nn.Conv2d(8, 12, kernel_size=3, padding=1),  # (3*3*12*16) + 16 = 1,744
-            nn.BatchNorm2d(12),  # 32
+            nn.Conv2d(8, 12, kernel_size=3, padding=1),  # 96*9=864+12
+            nn.BatchNorm2d(12),  # 24
             nn.ReLU(),  # 0
 
-            # Fourth conv block: 14x14x12 -> 14x14x16
-            nn.Conv2d(12, 16, kernel_size=3, padding=1),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(12, 16, kernel_size=3, padding=1),    # 192*9=1728+16
+            nn.BatchNorm2d(16), # 32
             nn.ReLU(),
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(7 * 7 * 16, 32),  # (7*7*16*32) + 32 = 25,120
+            nn.Linear(7 * 7 * 16, 24),  # (7*7*16*24)=18816+24
             nn.ReLU(),  # 0
-            nn.Linear(32, 10)  # (32*10) + 10 = 330
+            nn.Linear(24, 10)  # (24*10) + 10 = 250
         )
 
     def forward(self, x):
