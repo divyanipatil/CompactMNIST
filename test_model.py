@@ -1,6 +1,6 @@
 # test_model.py
 import pytest
-from train import ImprovedCNN, count_parameters, train_model
+from .train import ImprovedCNN, count_parameters, train_model
 
 
 def test_parameter_count():
