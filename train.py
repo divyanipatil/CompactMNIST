@@ -13,38 +13,33 @@ class ImprovedCNN(nn.Module):
     def __init__(self):
         super(ImprovedCNN, self).__init__()
         self.features = nn.Sequential(
-            # First conv block: 28x28x1 -> 28x28x4
-            nn.Conv2d(1, 4, kernel_size=3, padding=1),
-            nn.BatchNorm2d(4),
-            nn.ReLU(),
+            # First conv block: 28x28x1 -> 28x28x6
+            nn.Conv2d(1, 4, kernel_size=3, padding=1),  # (3*3*1*6) + 6 = 60
+            nn.BatchNorm2d(4),  # 12
+            nn.ReLU(),  # 0
+            nn.MaxPool2d(2),  # 0
 
-            # Second conv block: 28x28x4 -> 28x28x8
-            nn.Conv2d(4, 8, kernel_size=3, padding=1),
-            nn.BatchNorm2d(8),
-            nn.ReLU(),
-            nn.MaxPool2d(2),  # -> 14x14x8
+            # Second conv block: 14x14x6 -> 14x14x12
+            nn.Conv2d(4, 8, kernel_size=3, padding=1),  # (3*3*6*12) + 12 = 660
+            nn.BatchNorm2d(8),  # 24
+            nn.ReLU(),  # 0
+            nn.MaxPool2d(2),  # 0
 
-            # Third conv block: 14x14x8 -> 14x14x12
-            nn.Conv2d(8, 12, kernel_size=3, padding=1),
-            nn.BatchNorm2d(12),
-            nn.ReLU(),
+            # Third conv block: 7x7x12 -> 7x7x16
+            nn.Conv2d(8, 12, kernel_size=3, padding=1),  # (3*3*12*16) + 16 = 1,744
+            nn.BatchNorm2d(12),  # 32
+            nn.ReLU(),  # 0
 
             # Fourth conv block: 14x14x12 -> 14x14x16
             nn.Conv2d(12, 16, kernel_size=3, padding=1),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d(2),  # -> 7x7x16
-
-            # Fifth conv block: 7x7x16 -> 7x7x20
-            nn.Conv2d(16, 20, kernel_size=3, padding=1),
-            nn.BatchNorm2d(20),
-            nn.ReLU(),
         )
 
         self.classifier = nn.Sequential(
-            nn.Linear(7 * 7 * 20, 32),
-            nn.ReLU(),
-            nn.Linear(32, 10)
+            nn.Linear(7 * 7 * 16, 32),  # (7*7*16*32) + 32 = 25,120
+            nn.ReLU(),  # 0
+            nn.Linear(32, 10)  # (32*10) + 10 = 330
         )
 
     def forward(self, x):
