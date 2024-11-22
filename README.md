@@ -1,5 +1,5 @@
 # MNIST Classification with PyTorch
-![Build pass](https://github.com/divyanipatil/CompactMNIST/actions/workflows/model_test.yml/badge.svg)
+![Build pass](https://github.com/divyanipatil/CompactMNIST/actions/workflows/model_validation.yml/badge.svg)
 
 A deep learning project implementing CNN for MNIST digit classification, optimized for parameter efficiency while maintaining high accuracy.
 

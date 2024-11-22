@@ -1,5 +1,4 @@
-# .github/workflows/model_test.yml
-name: Model Testing
+name: Build
 
 on:
   push:
@@ -8,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  model-validation:
     runs-on: ubuntu-latest
 
     steps:
