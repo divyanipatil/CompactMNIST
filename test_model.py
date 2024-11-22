@@ -1,10 +1,10 @@
 # test_model.py
 import pytest
-from .train import ImprovedCNN, count_parameters, train_model
+from .train import CompactCNN, count_parameters, train_model
 
 
 def test_parameter_count():
-    model = ImprovedCNN()
+    model = CompactCNN()
     param_count = count_parameters(model)
     assert param_count < 25000, f"Model has {param_count} parameters, should be less than 25000"
 

@@ -9,9 +9,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-class ImprovedCNN(nn.Module):
+class CompactCNN(nn.Module):
     def __init__(self):
-        super(ImprovedCNN, self).__init__()
+        super(CompactCNN, self).__init__()
         self.features = nn.Sequential(
             nn.Conv2d(1, 4, kernel_size=3, padding=1),  # 9*4=36+4
             nn.BatchNorm2d(4),  # 8
@@ -68,14 +68,14 @@ def train_model():
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=80,
+        batch_size=24,
         shuffle=True,
         num_workers=2,
         pin_memory=True if torch.cuda.is_available() else False
     )
 
     # Initialize model
-    model = ImprovedCNN().to(device)
+    model = CompactCNN().to(device)
 
     # Calculate and print parameter count
     total_params = count_parameters(model)
@@ -85,15 +85,15 @@ def train_model():
     print(f"\nTotal trainable parameters: {total_params}")
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=0.006, betas=(0.9, 0.999), weight_decay=0)
+    optimizer = optim.AdamW(model.parameters(), lr=0.005, betas=(0.9, 0.999), weight_decay=0)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        max_lr=0.025,
+        max_lr=0.00220,
         steps_per_epoch=len(train_loader),
-        pct_start=0.3,
+        pct_start=0.95,
         epochs=1,
-        div_factor=1.2,
-        final_div_factor=2,
+        div_factor=1,
+        final_div_factor=1,
         anneal_strategy='cos'
     )
 
