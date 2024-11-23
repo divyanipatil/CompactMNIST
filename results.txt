@@ -1,2 +1,2 @@
 Parameters: 24511
-Accuracy: 95.60666666666667
+Accuracy: 94.61333333333333

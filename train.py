@@ -49,30 +49,40 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def train_model():
-    # Set device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Load and transform data
-    transform = transforms.Compose([
+def get_data_loader(batch_size):
+    train_transform = transforms.Compose([
+        transforms.RandomAffine(
+            degrees=2,
+            translate=(0.05, 0.05),
+            scale=(0.95, 1.05)
+        ),
         transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
+        transforms.Normalize((0.1307,), (0.3081,)),
     ])
 
     train_dataset = torchvision.datasets.MNIST(
         root='./data',
         train=True,
         download=True,
-        transform=transform
+        transform=train_transform
     )
 
     train_loader = DataLoader(
         train_dataset,
-        batch_size=24,
+        batch_size=batch_size,
         shuffle=True,
         num_workers=2,
-        pin_memory=True if torch.cuda.is_available() else False
+        pin_memory=True
     )
+
+    return train_loader
+
+
+def train_model():
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    train_loader = get_data_loader(batch_size=24)
 
     # Initialize model
     model = CompactCNN().to(device)
@@ -88,12 +98,12 @@ def train_model():
     optimizer = optim.AdamW(model.parameters(), lr=0.005, betas=(0.9, 0.999), weight_decay=0)
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
-        max_lr=0.00220,
+        max_lr=0.002238,
         steps_per_epoch=len(train_loader),
         pct_start=0.95,
         epochs=1,
-        div_factor=1,
-        final_div_factor=1,
+        div_factor=1.001,
+        final_div_factor=1.001,
         anneal_strategy='cos'
     )
 
