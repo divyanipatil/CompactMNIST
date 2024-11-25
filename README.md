@@ -37,7 +37,7 @@ A deep learning project implementing CNN for MNIST digit classification, optimiz
 ### CompactCNN
 - Convolutional Neural Network optimized for parameter efficiency
 - Features batch normalization and ReLU activation
-- Uses Adam optimizer with OneCycleLR scheduler
+- Uses SGD optimizer with OneCycleLR scheduler
 
 ## 💻 Usage
 
@@ -71,6 +71,9 @@ The project includes GitHub Actions workflow for automated testing:
 - Runs on Ubuntu latest
 - Uses Python 3.8
 - Automatically runs tests on push to main and pull requests
-- Validates two critical aspects:
+- Validates few critical aspects:
      - Model parameter count (must be < 25,000)
      - Model accuracy (must be ≥ 95%)
+     - Model robustness to input noise
+     - Model confidence testing
+     - Model inference speed
