@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -138,6 +140,21 @@ def train_model():
 
     final_accuracy = 100. * correct / total
     print(f'Final Training Accuracy: {final_accuracy:.2f}%')
+
+    # Save model checkpoint after training
+    checkpoint = {
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'train_accuracy': final_accuracy,
+    }
+
+    # Create models directory if it doesn't exist
+    if not os.path.exists('models'):
+        os.makedirs('models')
+
+    # Save the checkpoint
+    torch.save(checkpoint, 'models/mnist_model.pth')
+    print(f"\nModel saved to models/mnist_model.pth")
 
     return total_params, final_accuracy
 
